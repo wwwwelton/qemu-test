@@ -1,0 +1,22 @@
+.\qemu-img.exe create -f qcow2 .\alpine.qcow2 8G
+
+.\qemu-system-x86_64.exe -accel tcg -m 2048 -smp 20 -cpu max -cdrom .\alpine.iso -drive file=.\alpine.qcow2,if=virtio,format=qcow2 -boot order=d -netdev user,id=net0 -device virtio-net-pci,netdev=net0 -display default
+
+# either
+setup-alpine
+
+# or for a more direct disk installer (follow prompts)
+setup-disk
+
+.\qemu-system-x86_64.exe -accel tcg -m 2048 -smp 20, -cpu max -drive file=.\alpine.qcow2,if=virtio,format=qcow2 -netdev user,id=net0 -device virtio-net-pci,netdev=net0 -display default
+
+# Docker
+apk update
+apk add docker openrc
+rc-update add docker boot
+service docker start
+service docker status
+addgroup ${USER} Docker
+apk add docker-cli-compose
+docker version
+docker compose version

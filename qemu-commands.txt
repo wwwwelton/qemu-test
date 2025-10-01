@@ -1,0 +1,138 @@
+.\qemu-img create -f qcow2 ubuntu.qcow2 30G
+
+.\qemu-system-x86_64.exe -accel tcg,thread=multi -m 4096 -smp 2 -cpu max -drive file=ubuntu.qcow2,if=virtio,format=qcow2 -cdrom .\ubuntu-24.04.3-desktop-amd64.iso -boot order=d
+
+.\qemu-system-x86_64.exe -accel tcg,thread=multi -m 4096 -smp 2 -cpu max -drive file=ubuntu.qcow2,if=virtio,format=qcow2 -boot order=c
+
+.\qemu-system-x86_64.exe -accel whpx -m 4096 -smp 2 -cpu max -drive file=ubuntu.qcow2,if=virtio,format=qcow2 -cdrom .\ubuntu-24.04.3-desktop-amd64.iso -boot order=d
+
+.\qemu-system-x86_64.exe -accel help
+
+.\qemu-system-x86_64.exe -accel whpx -m 4096 -smp 2 -cpu max -drive file=ubuntu.qcow2,if=virtio,format=qcow2 -cdrom .\ubuntu-24.04.3-desktop-amd64.iso -boot order=d
+
+
+
+
+
+.\qemu-system-x86_64.exe -accel tcg,thread=multi -m 4096 -smp $([Environment]::ProcessorCount) -cpu max -drive file=ubuntu.qcow2,if=virtio,format=qcow2 -cdrom .\ubuntu-24.04.3-desktop-amd64.iso -boot order=d
+
+
+
+.\qemu-system-x86_64.exe -accel whpx -m 4096 -smp $([Environment]::ProcessorCount) -cpu max -drive file=ubuntu.qcow2,if=virtio,format=qcow2 -boot order=c
+
+
+
+----------------------------------------------------------------------
+
+1) Fast(-er) TCG install from ISO (multithread + virtio)
+.\qemu-system-x86_64.exe -accel tcg,thread=multi,tb-size=512 -machine q35 -m 4096 -smp $([Environment]::ProcessorCount) -cpu max -device virtio-vga -display sdl -drive file=ubuntu.qcow2,if=virtio,format=qcow2,cache=writeback,discard=unmap,aio=threads -netdev user,id=n1 -device virtio-net-pci,netdev=n1 -cdrom .\ubuntu-24.04.3-desktop-amd64.iso -boot order=d
+
+
+2) Boot from disk after install
+.\qemu-system-x86_64.exe -accel tcg,thread=multi,tb-size=512 -machine q35 -m 4096 -smp $([Environment]::ProcessorCount) -cpu max -device virtio-vga -display sdl -drive file=ubuntu.qcow2,if=virtio,format=qcow2,cache=writeback,discard=unmap,aio=threads -netdev user,id=n1 -device virtio-net-pci,netdev=n1 -boot order=c
+
+
+3) Go even faster on disk I/O (optional, trade-offs)
+.\qemu-img.exe convert -p -O raw ubuntu.qcow2 ubuntu.raw
+
+Preallocate (reduces fragmentation, faster sustained writes; creates a big file up front):
+.\qemu-img.exe convert -p -O raw -o preallocation=full ubuntu.qcow2 ubuntu.raw
+
+
+Aggressive cache (fast but risky if the host crashes—use for install only):
+-drive file=ubuntu.raw,format=raw,if=virtio,cache=unsafe,discard=unmap,aio=threads
+
+
+4) Lighter graphics (helps a lot on TCG)
+.\qemu-system-x86_64.exe -accel tcg,thread=multi,tb-size=512 -machine q35 -m 4096 -smp $([Environment]::ProcessorCount) -cpu max -nographic -serial mon:stdio -drive file=ubuntu.raw,format=raw,if=virtio,cache=writeback,discard=unmap,aio=threads -netdev user,id=n1 -device virtio-net-pci,netdev=n1 -cdrom .\ubuntu-24.04.3-desktop-amd64.iso -boot order=d
+
+If your build supports virgl (3D accel in guest; not always present on Windows builds), try:
+-device virtio-vga-gl -display sdl,gl=on
+
+5) Quick checks & tweaks
+See TCG options your binary supports:
+.\qemu-system-x86_64.exe -accel tcg,help
+
+See CPU models:
+.\qemu-system-x86_64.exe -cpu help
+
+Give QEMU more host time slice (can help a bit):
+Start-Process -FilePath .\qemu-system-x86_64.exe -ArgumentList "-accel tcg,thread=multi,tb-size=512 -machine q35 -m 4096 -smp $([Environment]::ProcessorCount) -cpu max -device virtio-vga -display sdl -drive file=ubuntu.raw,format=raw,if=virtio,cache=writeback,discard=unmap,aio=threads -netdev user,id=n1 -device virtio-net-pci,netdev=n1 -boot order=c" -Priority High
+
+
+
+ALPINE
+.\qemu-img.exe create -f qcow2 alpine.img 2G
+.\qemu-img create -f qcow2 alpine.qcow2 30G
+
+
+
+
+
+
+
+.\qemu-system-x86_64.exe -m 1024 -smp 2 -accel whpx -drive file=.\alpine.qcow2,if=virtio,format=qcow2 -cdrom .\alpine.iso -boot order=d -netdev user,id=net0,hostfwd=tcp::2222-:22 -device rtl8139,netdev=net0
+
+
+.\qemu-system-x86_64 -accel tcg -m 2048 -smp 2 -drive file=.\plucky-server-cloudimg-amd64.img,if=virtio,format=raw -netdev user,id=net0 -device e1000,netdev=net0
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.\qemu-img create -f qcow2 ubuntu.qcow2 30G
+
+
+
+qemu-system-x86_64 -accel tcg -m 2048 -smp 2 -drive file=2025-05-13-raspios-bookworm-arm64-lite.img,if=virtio,format=raw -netdev user,id=net0 -device e1000,netdev=net0
+
+
+
+.\qemu-system-x86_64.exe -accel tcg,thread=multi -m 4096 -smp 8 -cpu max -drive file=.\plucky-server-cloudimg-amd64.img,if=virtio,format=qcow2 -drive file=.\seed.iso,if=ide,media=cdrom -netdev user,id=net0 -device e1000,netdev=net0 -display default
+
+.\qemu-system-x86_64.exe -accel tcg,thread=multi -m 4096 -smp 8 -cpu max -drive file=.\plucky-server-cloudimg-amd64.img,if=virtio,format=qcow2 -drive file=.\seed.iso,if=ide,media=cdrom -netdev user,id=net0 -device e1000,netdev=net0 device virtio-vga,virgl=on -display gtk,gl=on
+
+.\qemu-system-x86_64.exe -accel tcg,thread=multi -m 4096 -smp 8 -cpu max -drive file=.\plucky-server-cloudimg-amd64.img,if=virtio,format=qcow2 -drive file=.\seed.iso,if=ide,media=cdrom -netdev user,id=net0 -device e1000,netdev=net0 -serial stdio -display none
+
+
+
+
+sudo apt update && sudo apt upgrade -y && sudo apt autoremove -y && sudo apt autoclean
+
+
+
+
+# create a small persistent overlay (8G for example)
+.\qemu-img.exe create -f qcow2 -b .\plucky-server-cloudimg-amd64.img .\plucky-persistent.qcow2 30G
+
+.\qemu-system-x86_64.exe -accel tcg,thread=multi -m 4096 -smp 8 -cpu max -drive file=.\plucky-persistent.qcow2,if=virtio,format=qcow2 -drive file=.\seed.iso,if=ide,media=cdrom -netdev user,id=net0 -device e1000,netdev=net0 -display default
+
+
+.\qemu-system-x86_64.exe -accel tcg,thread=multi -m 4096 -smp 8 -cpu max -drive file=.\plucky-persistent.qcow2,if=virtio,format=qcow2 -drive file=.\seed.iso,if=ide,media=cdrom -netdev user,id=net0 -device e1000,netdev=net0 -display default
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
